@@ -1,0 +1,33 @@
+-- Q1
+
+select to_char(create_date, 'YYYY-MM'),count(*) as new_valid_users
+from block_user b
+inner join email e on b.user_id = e.user_id
+inner join contact c on b.user_id = c.user_id
+where e.hashed_email not like '%blockrenovation.com'
+and c.user_id is not null AND (lower(first_name) NOT LIKE '%test%' AND lower(last_name) NOT LIKE '%test%')
+group by 1
+order by new_valid_users desc;
+
+--Q2
+select to_char(closed_won_date,'YYYY-MM') as month,
+sum(deal_value_usd) as gross_deal_value  
+from deal where deal_value_usd is not null
+group by 1
+order by 2 desc;
+
+--Q3
+with valid_users as (
+select c.user_id,c.contact_id,upper(c.property_city) as Property_City
+from contact c
+left join email e on c.user_id = e.user_id
+where c.user_id is not null and (lower(c.first_name) NOT LIKE '%test' AND lower(c.last_name) not like '%test%')
+and e.hashed_email not like '%blockrenovation.com')
+select vu.Property_City,
+count(*) * 100 / sum(count(*)) Over () as Pct_closed_Won
+from deal d
+join deal_contact dc on d.deal_id = dc.deal_id
+inner join valid_users vu on dc.contact_id = vu.contact_id
+where closed_won_date is not null
+group by 1
+order by pct_closed_won desc;
